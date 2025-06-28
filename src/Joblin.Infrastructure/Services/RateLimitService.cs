@@ -1,17 +1,13 @@
 namespace Joblin.Infrastructure.Services;
 
-
-
 /// <summary>
 /// Domain service for handling rate limiting logic
 /// </summary>
 public class RateLimitService(
-    IJoblinDbContext context,
-    ILogger<RateLimitService> logger)
+    IJoblinDbContext context)
     : IRateLimitService
 {
     private readonly IJoblinDbContext _context = context;
-    private readonly ILogger<RateLimitService> _logger = logger;
 
     /// <summary>
     /// Determines the applicable rate limit configuration for a job
@@ -54,15 +50,17 @@ public class RateLimitService(
         // If no current state, assume we can start (first job for this key)
         if (currentState == null)
         {
-            var newMetrics = new RateLimitMetrics(
-                currentActiveJobs: 0,
-                maxConcurrentJobs: configuration.MaxConcurrentJobs,
-                jobsInCurrentWindow: 0,
-                maxJobsPerWindow: configuration.MaxJobsPerTimeWindow,
-                windowStartTime: DateTimeOffset.UtcNow,
-                windowDuration: TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
-                rateLimitKey: context.GetEffectiveRateLimitKey(),
-                jobType: context.JobType);
+            var newMetrics = new RateLimitMetrics
+            {
+                CurrentActiveJobs = 0,
+                MaxConcurrentJobs = configuration.MaxConcurrentJobs,
+                JobsInCurrentWindow = 0,
+                MaxJobsPerWindow = configuration.MaxJobsPerTimeWindow,
+                WindowStartTime = DateTimeOffset.UtcNow,
+                WindowDuration = TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
+                RateLimitKey = context.GetEffectiveRateLimitKey(),
+                JobType = context.JobType
+            };
 
             return RateLimitCheckResult.Allowed(configuration, newMetrics);
         }
@@ -116,15 +114,17 @@ public class RateLimitService(
         RateLimitState currentState,
         JobExecutionContext context)
     {
-        return new RateLimitMetrics(
-            currentActiveJobs: currentState.ActiveJobCount,
-            maxConcurrentJobs: configuration.MaxConcurrentJobs,
-            jobsInCurrentWindow: currentState.JobsInCurrentWindow,
-            maxJobsPerWindow: configuration.MaxJobsPerTimeWindow,
-            windowStartTime: currentState.CurrentWindowStart,
-            windowDuration: TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
-            rateLimitKey: context.GetEffectiveRateLimitKey(),
-            jobType: context.JobType);
+        return new RateLimitMetrics
+        {
+            CurrentActiveJobs = currentState.ActiveJobCount,
+            MaxConcurrentJobs = configuration.MaxConcurrentJobs,
+            JobsInCurrentWindow = currentState.JobsInCurrentWindow,
+            MaxJobsPerWindow = configuration.MaxJobsPerTimeWindow,
+            WindowStartTime = currentState.CurrentWindowStart,
+            WindowDuration = TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
+            RateLimitKey = context.GetEffectiveRateLimitKey(),
+            JobType = context.JobType
+        };
     }
 
     private static string GetDenialReason(RateLimitConfiguration configuration, RateLimitState currentState)
@@ -176,43 +176,49 @@ public class RateLimitService(
 
         if (currentState == null)
         {
-            var newMetrics = new RateLimitMetrics(
-                currentActiveJobs: 0,
-                maxConcurrentJobs: configuration.MaxConcurrentJobs,
-                jobsInCurrentWindow: 0,
-                maxJobsPerWindow: configuration.MaxJobsPerTimeWindow,
-                windowStartTime: DateTimeOffset.UtcNow,
-                windowDuration: TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
-                rateLimitKey: key,
-                jobType: configuration.JobType ?? "");
+            var newMetrics = new RateLimitMetrics
+            {
+                CurrentActiveJobs = 0,
+                MaxConcurrentJobs = configuration.MaxConcurrentJobs,
+                JobsInCurrentWindow = 0,
+                MaxJobsPerWindow = configuration.MaxJobsPerTimeWindow,
+                WindowStartTime = DateTimeOffset.UtcNow,
+                WindowDuration = TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
+                RateLimitKey = key,
+                JobType = configuration.JobType ?? ""
+            };
 
             return RateLimitCheckResult.Allowed(configuration, newMetrics);
         }
 
         if (currentState.CanStartJob(configuration))
         {
-            var metrics = new RateLimitMetrics(
-                currentActiveJobs: currentState.ActiveJobCount,
-                maxConcurrentJobs: configuration.MaxConcurrentJobs,
-                jobsInCurrentWindow: currentState.JobsInCurrentWindow,
-                maxJobsPerWindow: configuration.MaxJobsPerTimeWindow,
-                windowStartTime: currentState.CurrentWindowStart,
-                windowDuration: TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
-                rateLimitKey: key,
-                jobType: configuration.JobType ?? "");
+            var metrics = new RateLimitMetrics
+            {
+                CurrentActiveJobs = currentState.ActiveJobCount,
+                MaxConcurrentJobs = configuration.MaxConcurrentJobs,
+                JobsInCurrentWindow = currentState.JobsInCurrentWindow,
+                MaxJobsPerWindow = configuration.MaxJobsPerTimeWindow,
+                WindowStartTime = currentState.CurrentWindowStart,
+                WindowDuration = TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
+                RateLimitKey = key,
+                JobType = configuration.JobType ?? ""
+            };
 
             return RateLimitCheckResult.Allowed(configuration, metrics);
         }
 
-        var denialMetrics = new RateLimitMetrics(
-            currentActiveJobs: currentState.ActiveJobCount,
-            maxConcurrentJobs: configuration.MaxConcurrentJobs,
-            jobsInCurrentWindow: currentState.JobsInCurrentWindow,
-            maxJobsPerWindow: configuration.MaxJobsPerTimeWindow,
-            windowStartTime: currentState.CurrentWindowStart,
-            windowDuration: TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
-            rateLimitKey: key,
-            jobType: configuration.JobType ?? "");
+        var denialMetrics = new RateLimitMetrics
+        {
+            CurrentActiveJobs = currentState.ActiveJobCount,
+            MaxConcurrentJobs = configuration.MaxConcurrentJobs,
+            JobsInCurrentWindow = currentState.JobsInCurrentWindow,
+            MaxJobsPerWindow = configuration.MaxJobsPerTimeWindow,
+            WindowStartTime = currentState.CurrentWindowStart,
+            WindowDuration = TimeSpan.FromSeconds(configuration.TimeWindowSeconds),
+            RateLimitKey = key,
+            JobType = configuration.JobType ?? ""
+        };
 
         var denialReason = GetDenialReason(configuration, currentState);
         var estimatedWaitTime = CalculateEstimatedWaitTime(configuration, currentState);

@@ -3,24 +3,16 @@ namespace Joblin.Domain.ValueObjects;
 /// <summary>
 /// Value object representing current rate limiting metrics
 /// </summary>
-public class RateLimitMetrics(
-    int currentActiveJobs,
-    int maxConcurrentJobs,
-    int jobsInCurrentWindow,
-    int maxJobsPerWindow,
-    DateTimeOffset windowStartTime,
-    TimeSpan windowDuration,
-    string rateLimitKey,
-    string jobType) : ValueObject
+public class RateLimitMetrics : ValueObject
 {
-    public int CurrentActiveJobs { get; } = currentActiveJobs;
-    public int MaxConcurrentJobs { get; } = maxConcurrentJobs;
-    public int JobsInCurrentWindow { get; } = jobsInCurrentWindow;
-    public int MaxJobsPerWindow { get; } = maxJobsPerWindow;
-    public DateTimeOffset WindowStartTime { get; } = windowStartTime;
-    public TimeSpan WindowDuration { get; } = windowDuration;
-    public string RateLimitKey { get; } = rateLimitKey ?? throw new ArgumentNullException(nameof(rateLimitKey));
-    public string JobType { get; } = jobType ?? throw new ArgumentNullException(nameof(jobType));
+    public int CurrentActiveJobs { get; init; }
+    public int MaxConcurrentJobs { get; init; } 
+    public int JobsInCurrentWindow { get; init; }
+    public int MaxJobsPerWindow { get; init; } 
+    public DateTimeOffset WindowStartTime { get; init; }
+    public TimeSpan WindowDuration { get; init; } 
+    public string RateLimitKey { get; init; } = string.Empty;
+    public string JobType { get; init; } = string.Empty;
 
     /// <summary>
     /// Percentage of concurrent job capacity being used
@@ -69,13 +61,15 @@ public class RateLimitMetrics(
         yield return JobType;
     }
     
-    public static RateLimitMetrics Empty => new(
-        currentActiveJobs: 0,
-        maxConcurrentJobs: 0,
-        jobsInCurrentWindow: 0,
-        maxJobsPerWindow: 0,
-        windowStartTime: DateTimeOffset.MinValue,
-        windowDuration: TimeSpan.Zero,
-        rateLimitKey: string.Empty,
-        jobType: string.Empty);
+    public static RateLimitMetrics Empty => new RateLimitMetrics
+    {
+        CurrentActiveJobs = 0,
+        MaxConcurrentJobs = 0,
+        JobsInCurrentWindow = 0,
+        MaxJobsPerWindow = 0,
+        WindowStartTime = DateTimeOffset.MinValue,
+        WindowDuration = TimeSpan.Zero,
+        RateLimitKey = string.Empty,
+        JobType = string.Empty
+    };
 }
